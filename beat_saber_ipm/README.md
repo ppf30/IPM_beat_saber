@@ -32,7 +32,7 @@ Las carpetas assets/audio/, assets/charts/ y assets/images/ alojarán los recurs
 ## Reparto de trabajo propuesto
 
 - **Pablo:** tracking.py, calibration.py, metrics.py y preparación del entorno.
-- **Compañera:** game.py, rendering.py y rhythm.py.
+- **Patri:** game.py, rendering.py y rhythm.py.
 - **Ambos:** acordar models.py y config.py e integrar mediante main.py.
 
 ## Acuerdo inicial de comunicación
