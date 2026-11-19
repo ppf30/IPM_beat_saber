@@ -1,0 +1,40 @@
+# Entornos virtuales
+.venv/
+venv/
+env/
+ENV/
+.venv*/
+
+# Cachés y archivos compilados de Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.tox/
+.nox/
+
+# Empaquetado y cobertura
+build/
+dist/
+*.egg-info/
+.eggs/
+.coverage
+.coverage.*
+htmlcov/
+
+# Archivos temporales
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# CSV generados; conservar el marcador de la carpeta
+results/**/*.csv
+!results/.gitkeep
