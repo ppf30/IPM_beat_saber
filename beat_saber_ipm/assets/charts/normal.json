@@ -1,0 +1,416 @@
+{
+ "title": "Demo normal",
+ "bpm": 100.0,
+ "offset": 0.0,
+ "audio": null,
+ "notes": [
+  {
+   "beat": 4.0,
+   "hand": "right",
+   "col": 2,
+   "row": 2
+  },
+  {
+   "beat": 6.0,
+   "hand": "left",
+   "col": 0,
+   "row": 2
+  },
+  {
+   "beat": 8.0,
+   "hand": "right",
+   "col": 3,
+   "row": 1
+  },
+  {
+   "beat": 10.0,
+   "hand": "left",
+   "col": 0,
+   "row": 0
+  },
+  {
+   "beat": 12.0,
+   "hand": "right",
+   "col": 1,
+   "row": 1
+  },
+  {
+   "beat": 14.0,
+   "hand": "left",
+   "col": 0,
+   "row": 2
+  },
+  {
+   "beat": 16.0,
+   "hand": "right",
+   "col": 3,
+   "row": 0
+  },
+  {
+   "beat": 18.0,
+   "hand": "left",
+   "col": 0,
+   "row": 0
+  },
+  {
+   "beat": 20.0,
+   "hand": "right",
+   "col": 2,
+   "row": 0
+  },
+  {
+   "beat": 21.0,
+   "hand": "left",
+   "col": 0,
+   "row": 1
+  },
+  {
+   "beat": 22.0,
+   "hand": "right",
+   "col": 1,
+   "row": 1
+  },
+  {
+   "beat": 23.0,
+   "hand": "left",
+   "col": 2,
+   "row": 1
+  },
+  {
+   "beat": 24.0,
+   "hand": "right",
+   "col": 3,
+   "row": 1
+  },
+  {
+   "beat": 25.0,
+   "hand": "left",
+   "col": 0,
+   "row": 1
+  },
+  {
+   "beat": 26.0,
+   "hand": "right",
+   "col": 2,
+   "row": 0
+  },
+  {
+   "beat": 27.0,
+   "hand": "left",
+   "col": 0,
+   "row": 2
+  },
+  {
+   "beat": 28.0,
+   "hand": "right",
+   "col": 3,
+   "row": 1
+  },
+  {
+   "beat": 29.0,
+   "hand": "left",
+   "col": 0,
+   "row": 0
+  },
+  {
+   "beat": 30.0,
+   "hand": "right",
+   "col": 1,
+   "row": 1
+  },
+  {
+   "beat": 31.0,
+   "hand": "left",
+   "col": 1,
+   "row": 1
+  },
+  {
+   "beat": 32.0,
+   "hand": "right",
+   "col": 1,
+   "row": 0
+  },
+  {
+   "beat": 33.0,
+   "hand": "left",
+   "col": 2,
+   "row": 1
+  },
+  {
+   "beat": 34.0,
+   "hand": "right",
+   "col": 1,
+   "row": 1
+  },
+  {
+   "beat": 35.0,
+   "hand": "left",
+   "col": 1,
+   "row": 0
+  },
+  {
+   "beat": 36.0,
+   "hand": "right",
+   "col": 1,
+   "row": 0
+  },
+  {
+   "beat": 36.0,
+   "hand": "left",
+   "col": 0,
+   "row": 2
+  },
+  {
+   "beat": 37.0,
+   "hand": "right",
+   "col": 2,
+   "row": 2
+  },
+  {
+   "beat": 38.0,
+   "hand": "left",
+   "col": 2,
+   "row": 1
+  },
+  {
+   "beat": 39.0,
+   "hand": "right",
+   "col": 1,
+   "row": 2
+  },
+  {
+   "beat": 40.0,
+   "hand": "right",
+   "col": 1,
+   "row": 1
+  },
+  {
+   "beat": 40.0,
+   "hand": "left",
+   "col": 1,
+   "row": 2
+  },
+  {
+   "beat": 41.0,
+   "hand": "left",
+   "col": 1,
+   "row": 1
+  },
+  {
+   "beat": 42.0,
+   "hand": "right",
+   "col": 2,
+   "row": 0
+  },
+  {
+   "beat": 43.0,
+   "hand": "left",
+   "col": 0,
+   "row": 1
+  },
+  {
+   "beat": 44.0,
+   "hand": "right",
+   "col": 2,
+   "row": 1
+  },
+  {
+   "beat": 44.0,
+   "hand": "left",
+   "col": 1,
+   "row": 0
+  },
+  {
+   "beat": 45.0,
+   "hand": "right",
+   "col": 1,
+   "row": 1
+  },
+  {
+   "beat": 46.0,
+   "hand": "left",
+   "col": 0,
+   "row": 1
+  },
+  {
+   "beat": 47.0,
+   "hand": "right",
+   "col": 1,
+   "row": 0
+  },
+  {
+   "beat": 48.0,
+   "hand": "right",
+   "col": 2,
+   "row": 1
+  },
+  {
+   "beat": 48.0,
+   "hand": "left",
+   "col": 1,
+   "row": 1
+  },
+  {
+   "beat": 49.0,
+   "hand": "left",
+   "col": 2,
+   "row": 1
+  },
+  {
+   "beat": 50.0,
+   "hand": "right",
+   "col": 3,
+   "row": 0
+  },
+  {
+   "beat": 51.0,
+   "hand": "left",
+   "col": 2,
+   "row": 2
+  },
+  {
+   "beat": 52.0,
+   "hand": "right",
+   "col": 3,
+   "row": 2
+  },
+  {
+   "beat": 53.0,
+   "hand": "left",
+   "col": 1,
+   "row": 2
+  },
+  {
+   "beat": 53.5,
+   "hand": "right",
+   "col": 2,
+   "row": 1
+  },
+  {
+   "beat": 54.0,
+   "hand": "left",
+   "col": 1,
+   "row": 0
+  },
+  {
+   "beat": 55.0,
+   "hand": "right",
+   "col": 1,
+   "row": 2
+  },
+  {
+   "beat": 55.5,
+   "hand": "left",
+   "col": 1,
+   "row": 1
+  },
+  {
+   "beat": 56.0,
+   "hand": "right",
+   "col": 1,
+   "row": 1
+  },
+  {
+   "beat": 57.0,
+   "hand": "left",
+   "col": 1,
+   "row": 2
+  },
+  {
+   "beat": 57.5,
+   "hand": "right",
+   "col": 3,
+   "row": 2
+  },
+  {
+   "beat": 58.0,
+   "hand": "left",
+   "col": 2,
+   "row": 0
+  },
+  {
+   "beat": 59.0,
+   "hand": "right",
+   "col": 3,
+   "row": 1
+  },
+  {
+   "beat": 59.5,
+   "hand": "left",
+   "col": 1,
+   "row": 1
+  },
+  {
+   "beat": 60.0,
+   "hand": "right",
+   "col": 1,
+   "row": 1
+  },
+  {
+   "beat": 61.0,
+   "hand": "left",
+   "col": 0,
+   "row": 1
+  },
+  {
+   "beat": 61.5,
+   "hand": "right",
+   "col": 3,
+   "row": 1
+  },
+  {
+   "beat": 62.0,
+   "hand": "left",
+   "col": 1,
+   "row": 0
+  },
+  {
+   "beat": 63.0,
+   "hand": "right",
+   "col": 2,
+   "row": 2
+  },
+  {
+   "beat": 63.5,
+   "hand": "left",
+   "col": 0,
+   "row": 2
+  },
+  {
+   "beat": 64.0,
+   "hand": "right",
+   "col": 3,
+   "row": 2
+  },
+  {
+   "beat": 65.0,
+   "hand": "left",
+   "col": 2,
+   "row": 1
+  },
+  {
+   "beat": 65.5,
+   "hand": "right",
+   "col": 1,
+   "row": 0
+  },
+  {
+   "beat": 66.0,
+   "hand": "left",
+   "col": 0,
+   "row": 1
+  },
+  {
+   "beat": 67.0,
+   "hand": "right",
+   "col": 3,
+   "row": 0
+  },
+  {
+   "beat": 67.5,
+   "hand": "left",
+   "col": 2,
+   "row": 0
+  }
+ ]
+}

@@ -1,52 +1,141 @@
-# Beat Saber IPM
+# Beat Saber IPM — juego serio para el seguimiento funcional de los brazos
 
-## Objetivo y funcionamiento previsto
+Práctica 2 de IPM (visión por computador). Juego 2D inspirado en Beat Saber que se controla con las manos delante de una **webcam**: cada mano es un sable y hay que golpear, al ritmo de la música, los bloques de su color. Mientras se juega, el sistema mide cómo se mueve la persona y guarda indicadores que permiten **seguir su evolución entre sesiones**.
 
-Práctica de Interacción Persona-Máquina de dos estudiantes: un juego 2D inspirado en Beat Saber para entrenar la coordinación de brazos mediante webcam. Cada mano controlará un sable para golpear bloques de su color siguiendo un ritmo. Más adelante se añadirán calibración, puntuación y estadísticas.
+## Utilidad: por qué es un juego serio
 
-Se prevé utilizar Python, OpenCV para capturar la cámara, MediaPipe para detectar las muñecas y Pygame para gráficos, interacción y audio.
+El juego está pensado para el ámbito de la **salud**, en dos líneas:
 
-**Estado actual: solo existe la estructura inicial. Todavía no hay una aplicación ejecutable ni funcionalidades implementadas.**
+- **Rehabilitación física del tren superior.** Convierte ejercicios repetitivos de brazos (que suelen resultar aburridos) en una actividad motivadora, con retroalimentación inmediata y tres niveles de dificultad. Solo necesita un ordenador con webcam, así que se puede hacer en casa. Está pensado para poder usarse de pie o sentado, siempre que la cámara vea los hombros y los brazos (el uso sentado está por validar).
+- **Apoyo al seguimiento de la fragilidad.** La fragilidad es la pérdida de reserva funcional que suele aparecer con la edad y se valora, entre otros aspectos, con la lentitud y el agotamiento (criterios de Fried). El juego no mide la fragilidad, pero registra indicadores funcionales relacionados con esos aspectos, de forma pasiva y sin material especial:
 
-## Archivos y responsabilidades
+| Indicador | Cómo se obtiene | Qué refleja |
+| --- | --- | --- |
+| Error de tiempo (ms) y sesgo | Diferencia entre el golpe y el instante ideal | Sincronización y tiempo de reacción |
+| Velocidad media del golpe | Velocidad de la muñeca al acertar | Rapidez de movimiento |
+| Amplitud de movimiento | Zona que recorren las manos en la calibración, en anchos de hombro (no depende de la distancia a la cámara) | Movilidad del hombro y el brazo |
+| Precisión izquierda / derecha y equilibrio | Aciertos por mano | Simetría entre brazos |
+| Fatiga | Caída de precisión y de velocidad de la 2ª mitad respecto a la 1ª | Resistencia durante la sesión |
+| % de mano no detectada | Fotogramas sin detección por mano | Calidad de la medida |
 
-| Archivo | Responsabilidad |
-| --- | --- |
-| main.py | Inicio y conexión entre los módulos. |
-| config.py | Configuración general del juego. |
-| models.py | Futuros tipos de datos compartidos para manos, bloques y resultados. |
-| tracking.py | Captura de webcam y detección de muñecas. |
-| calibration.py | Adaptación de coordenadas y zona de movimiento. |
-| game.py | Reglas, colisiones, puntuación y estados de partida. |
-| rendering.py | Dibujo de pantallas, bloques, sables e interfaz. |
-| rhythm.py | Lectura de patrones de bloques y sincronización temporal. |
-| metrics.py | Cálculo y exportación de estadísticas. |
-| requirements.txt | Comentarios con las dependencias previstas, pendientes de activar. |
-| setup.ps1 | Marcador para la futura preparación del entorno en Windows. |
-| setup.sh | Marcador para la futura preparación del entorno en sistemas Unix. |
-| README.md | Objetivo, organización y acuerdos iniciales del proyecto. |
-| .gitignore | Exclusiones de Python, archivos temporales y CSV generados en results/. |
+> **Aviso:** son indicadores orientativos de seguimiento personal, **no un diagnóstico** ni están validados clínicamente. Medidas como la fuerza de agarre o la velocidad de la marcha quedan fuera de este juego.
 
-Las carpetas assets/audio/, assets/charts/ y assets/images/ alojarán los recursos del juego; models/, los futuros archivos de modelos; y results/, los resultados exportados. Por ahora solo contienen un .gitkeep para conservarlas en Git.
+## Instalación (Miniconda, equipo nuevo)
 
-## Reparto de trabajo propuesto
+Necesitas **Miniconda** y una webcam (sin cámara se puede probar con `--tracker mouse`).
 
-- **Pablo:** tracking.py, calibration.py, metrics.py y preparación del entorno.
-- **Patri:** game.py, rendering.py y rhythm.py.
-- **Ambos:** acordar models.py y config.py e integrar mediante main.py.
+1. Instala Miniconda: <https://www.anaconda.com/docs/getting-started/miniconda/install>
+2. Abre una terminal (en Windows, **Anaconda PowerShell Prompt**) y entra en la carpeta del proyecto:
+   ```bash
+   cd ruta/a/beat_saber_ipm
+   ```
+3. Crea el entorno y descarga el modelo con **un solo script**:
+   ```bash
+   bash setup.sh          # Linux / macOS
+   .\setup.ps1            # Windows (Anaconda PowerShell Prompt)
+   ```
+   Equivale a hacerlo a mano:
+   ```bash
+   conda env create -f environment.yml     # entorno IPM_beat_saber con Python 3.12
+   conda activate IPM_beat_saber
+   python download_models.py               # modelo de MediaPipe en detection_models/
+   ```
+4. Activa el entorno y ejecuta:
+   ```bash
+   conda activate IPM_beat_saber
+   python main.py
+   ```
 
-## Acuerdo inicial de comunicación
+Las versiones (`mediapipe==0.10.21`, `numpy==1.26.4`, `opencv-contrib-python==4.11.0.86`, `pygame==2.6.1`) son las del repositorio base de la práctica. Si ya tienes un entorno propio, también vale `pip install -r requirements.txt` con Python 3.12.
 
-La detección entregará las posiciones de ambas manos con coordenadas x e y normalizadas entre 0 y 1 y un indicador de validez para cada mano. Las coordenadas corresponderán a la pantalla en modo espejo y las manos se identificarán desde la perspectiva del jugador.
+## Uso
 
-## Etapas previstas
+```bash
+python main.py                         # webcam, nivel normal
+python main.py --level suave           # suave | normal | intenso
+python main.py --player Ana            # identificador que se guarda en las estadísticas
+python main.py --camera 1              # otra cámara
+python main.py --tracker mouse         # sin cámara: ratón = mano derecha, Ctrl = izquierda
+python main.py --tracker sim           # manos simuladas (demo)
+python main.py --fullscreen
+```
 
-1. Prototipos independientes.
-2. Integración de los módulos.
-3. Ritmo y sincronización.
-4. Calibración.
-5. Entrega.
+**Teclas:** `1`-`3` nivel · `ENTER` jugar · `C` calibrar · `P` pausa · `ESC` pausa / abandonar / salir · `R` repetir (en resultados).
 
-## Instalación y ejecución
+**Primera vez:** pulsa `C`, colócate a 1,5–2 m de la cámara con los hombros y los brazos visibles, pulsa `ESPACIO` y durante 8 s lleva ambas manos al máximo alcance cómodo (arriba, abajo, izquierda y derecha). La zona recorrida se ajusta a la pantalla de juego y se guarda en `calibration.json`. Repite la calibración si cambias de persona o de sitio.
 
-**Pendientes.** Las dependencias todavía no están activadas y los scripts de preparación solo contienen comentarios. Las instrucciones de instalación y ejecución se añadirán cuando exista una aplicación funcional.
+## Cómo se juega
+
+- Cada bloque aparece unos instantes antes de su momento y un aro blanco se cierra sobre él: hay que golpearlo cuando el aro lo alcanza.
+- Se golpea con **la mano de su color** (**I** = izquierda, roja; **D** = derecha, azul) y **en movimiento**: pasar la mano rápido, no apoyarla. Usar la otra mano rompe la racha.
+- **Perfecto** (100 pts), **Bien** (70) y **OK** (40) según la precisión temporal; cada 10 aciertos seguidos sube el multiplicador (máx. x4).
+
+| Nivel | Tempo | Ventana de acierto | Aviso del bloque | Velocidad mínima | Bloques |
+| --- | --- | --- | --- | --- | --- |
+| suave | 70 bpm | ±0,35 s | 1,8 s | baja | más grandes |
+| normal | 100 bpm | ±0,25 s | 1,2 s | media | tamaño estándar |
+| intenso | 120 bpm | ±0,20 s | 1,0 s | alta | tamaño estándar |
+
+## Estadísticas guardadas
+
+Al terminar cada partida se escribe en `results/`:
+
+- `<fecha>_<jugador>_notes.csv`: una fila por bloque (instante, mano, celda, resultado, error en ms, velocidad del golpe, puntos).
+- `summary.csv`: una fila por partida con los indicadores de la tabla anterior, además de precisión, aciertos por tipo, mejor racha y nivel. Al acumular filas del mismo jugador se ve su evolución entre sesiones.
+
+## Cómo está hecho
+
+```text
+webcam ─► tracking.py ──► calibration.py ──► game.py ──► rendering.py
+          (MediaPipe       (zona de movimiento   (colisiones,   (Pygame)
+           Pose: muñecas    y suavizado)          puntuación)       │
+           y hombros)                                │              ▼
+                                  rhythm.py ─────────┘          pantalla
+                                  (charts y reloj)      game.py ──► metrics.py ──► results/*.csv
+```
+
+- **tracking.py**: hilo de captura con OpenCV + MediaPipe Pose (API *Tasks*, modelo `pose_landmarker_full`). Usa las muñecas (landmarks 15 y 16) y los hombros (11 y 12). La imagen se interpreta en modo espejo y las manos se asignan desde la perspectiva del jugador. Incluye `MouseTracker` y `SimulatedTracker` para desarrollar sin cámara.
+- **calibration.py**: calcula la zona de movimiento de cada persona, suaviza la señal y tolera pérdidas breves de detección.
+- **game.py**: reglas de colisión, velocidad de golpe, puntuación y estados. No depende de pantalla ni cámara, por lo que se prueba con datos sintéticos.
+- **rhythm.py**: carga los patrones de bloques (JSON), genera los de cada nivel y mantiene el reloj de la canción.
+- **rendering.py**: todas las pantallas y la interfaz; siempre con letra además de color para no depender solo de este.
+- **metrics.py**: calcula los indicadores y exporta los CSV.
+- **config.py** reúne todos los parámetros; **models.py** los tipos de datos compartidos.
+
+Convención de coordenadas: `x`, `y` entre 0 y 1, imagen en modo espejo, `left` = mano izquierda del jugador, `valid` por mano y `timestamp` en segundos.
+
+### Patrones propios (charts)
+
+Archivos JSON en `assets/charts/`; se usan con `--chart ruta.json`:
+
+```json
+{"title": "Mi canción", "bpm": 120, "offset": 0.0, "audio": "mi_cancion.ogg",
+ "notes": [{"beat": 4, "hand": "right", "col": 1, "row": 2},
+           {"beat": 5, "hand": "left",  "col": 0, "row": 1}]}
+```
+
+`beat` (o `time`, en segundos) = cuándo golpear · `hand` = `left`/`right` · `col` 0–3 y `row` 0–2 = celda · `audio` es opcional (archivo en `assets/audio/`); sin audio suena un metrónomo. `python rhythm.py` regenera los charts de los tres niveles.
+
+## Pruebas
+
+```bash
+python -m pytest -q
+```
+
+Cubren las reglas del juego, los niveles, la calibración, las métricas y una partida completa con manos simuladas.
+
+## Limitaciones y trabajo futuro
+
+- La amplitud de movimiento es una estimación 2D con una sola cámara; no sustituye a una medida clínica.
+- La fatiga solo es significativa en sesiones largas; las sesiones de demostración duran menos de un minuto.
+- Faltan validación clínica y valores de referencia por edad; haría falta un estudio con usuarios y profesionales sanitarios.
+- Mejoras posibles: música real con su patrón, informe gráfico de evolución por jugador, modo sentado con una rejilla adaptada y corrección de la latencia de la cámara.
+
+## Entrega
+
+```bash
+python download_models.py                                       # opcional: incluye el modelo en el zip
+python empaquetar.py nombre_apellido1_apellido2_nombre_apellido1_apellido2
+```
+
+Genera el `.zip` con el nombre completo de los integrantes, sin entornos, cachés ni resultados personales.

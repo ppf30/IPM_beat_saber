@@ -38,3 +38,8 @@ Thumbs.db
 # CSV generados; conservar el marcador de la carpeta
 results/**/*.csv
 !results/.gitkeep
+
+# Calibración personal y modelo descargado por setup (se vuelve a generar)
+calibration.json
+detection_models/*.task
+!detection_models/.gitkeep
