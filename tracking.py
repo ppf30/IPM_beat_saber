@@ -1,12 +1,11 @@
-"""Deteccion de posicion de manos mediante camara, raton o simulacion"""
+"""Deteccion de posicion de manos mediante camara o raton"""
 
 from __future__ import annotations
 
-import math
 import threading
 import time
 from abc import ABC, abstractmethod
-from typing import Callable, Optional
+from typing import Optional
 
 import numpy as np
 
@@ -100,7 +99,7 @@ class WebcamTracker(HandTracker):
         if not self.cfg.pose_model_path.exists():
             raise FileNotFoundError(
                 f"Falta el modelo de MediaPipe en {self.cfg.pose_model_path}.\n"
-                "Descárgalo con:  python download_models.py   (o ejecuta setup.sh / setup.ps1)"
+                "Descárgalo con:  python download_models.py"
             )
         cap = cv.VideoCapture(self.cfg.camera_index)
         cap.set(cv.CAP_PROP_FRAME_WIDTH, self.cfg.camera_size[0])
@@ -237,54 +236,3 @@ class MouseTracker(HandTracker):
             HandPosition(*self._pos[Hand.RIGHT], True),
             time.monotonic(),
         )
-
-
-class SimulatedTracker(HandTracker):
-    """Genera trayectorias automaticas para pruebas sin entrada fisica
-
-    Attributes:
-        name (str): Identificador del tracker simulado
-    """
-
-    name = "sim"
-
-    def __init__(
-        self,
-        motion: Optional[Callable[[float], tuple[float, float, float, float]]] = None,
-        clock: Callable[[], float] = time.monotonic,
-    ) -> None:
-        """Configura la funcion de movimiento y la fuente de tiempo
-
-        Args:
-            motion (Optional[Callable]): Funcion que recibe el tiempo y devuelve (lx, ly, rx, ry)
-            clock (Callable): Funcion que devuelve el tiempo actual en segundos
-        """
-        self._motion = motion or self._default_motion
-        self._clock = clock
-
-    @staticmethod
-    def _default_motion(t: float) -> tuple[float, float, float, float]:
-        """Calcula posiciones oscilatorias por defecto para ambas manos en el tiempo t
-
-        Args:
-            t (float): Instante de tiempo en segundos
-
-        Returns:
-            tuple[float, float, float, float]: Coordenadas normalizadas (lx, ly, rx, ry)
-        """
-        return (
-            0.35 + 0.15 * math.sin(1.7 * t),
-            0.50 + 0.20 * math.sin(2.3 * t + 1.0),
-            0.65 + 0.15 * math.sin(1.9 * t + 2.0),
-            0.50 + 0.20 * math.sin(2.1 * t),
-        )
-
-    def read(self) -> HandsFrame:
-        """Devuelve las posiciones simuladas en el instante actual
-
-        Returns:
-            HandsFrame: Frame generado a partir de la trayectoria calculada
-        """
-        t = self._clock()
-        lx, ly, rx, ry = self._motion(t)
-        return HandsFrame(HandPosition(lx, ly, True), HandPosition(rx, ry, True), t)

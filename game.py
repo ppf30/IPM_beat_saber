@@ -240,3 +240,64 @@ class Game:
             hand (Hand): Mano evaluada
             hands (HandsFrame): Posiciones actuales de las manos
         """
+        p = hands.get(hand)
+        if not p.valid:
+            return False
+        reach = self.cfg.block_radius + self.cfg.saber_radius
+        if math.dist(self._to_px(p.x, p.y), self.cfg.cell_center(note.col, note.row)) > reach:
+            return False
+        return self._speed[hand] >= self.cfg.min_swing_speed
+
+    def _hit(self, ns: _NoteState, error: float) -> GameEvent:
+        """Clasifica un golpe segun su precision temporal y lo puntua
+
+        Args:
+            ns (_NoteState): Estado del bloque golpeado
+            error (float): Diferencia en segundos entre el golpe y el instante ideal (> 0 es tarde)
+
+        Returns:
+            GameEvent: Evento con el resultado del acierto y los puntos obtenidos
+        """
+        cfg = self.cfg
+        a = abs(error)
+        if a <= cfg.perfect_window:
+            judgement, base = Judgement.PERFECT, cfg.points_perfect
+        elif a <= cfg.good_window:
+            judgement, base = Judgement.GOOD, cfg.points_good
+        else:
+            judgement, base = Judgement.OK, cfg.points_ok
+        multiplier = min(1 + self.combo // cfg.combo_step, cfg.max_multiplier)
+        return self._resolve(
+            ns, judgement, error, self._speed[ns.note.hand], base * multiplier
+        )
+
+    def _resolve(
+        self,
+        ns: _NoteState,
+        judgement: Judgement,
+        error: Optional[float],
+        speed: Optional[float],
+        score: int,
+    ) -> GameEvent:
+        """Cierra un bloque, actualiza puntuacion y racha y registra el resultado
+
+        Args:
+            ns (_NoteState): Estado del bloque que se resuelve
+            judgement (Judgement): Resultado asignado al bloque
+            error (Optional[float]): Error temporal en segundos, o None si fue un fallo
+            speed (Optional[float]): Velocidad de la mano al golpear en px/s, o None si fue un fallo
+            score (int): Puntos obtenidos por el bloque
+
+        Returns:
+            GameEvent: Evento creado y almacenado en los resultados
+        """
+        ns.done = True
+        if judgement is Judgement.MISS:
+            self.combo = 0
+        else:
+            self.combo += 1
+            self.max_combo = max(self.max_combo, self.combo)
+        self.score += score
+        event = GameEvent(ns.note, judgement, error, speed, score, self.combo)
+        self.results.append(event)
+        return event

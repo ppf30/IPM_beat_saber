@@ -338,4 +338,8 @@ class HandSmoother:
                 self._last[hand] = None
                 out[hand] = HandPosition()
         result = HandsFrame(out[Hand.LEFT], out[Hand.RIGHT], frame.timestamp)
-        self._last_input
+        self._last_input_ts = frame.timestamp
+        self._last_output = result
+        return result
+
+    
