@@ -20,45 +20,27 @@ El juego está pensado para el ámbito de la **salud**, en dos líneas:
 
 > **Aviso:** son indicadores orientativos de seguimiento personal, **no un diagnóstico** ni están validados clínicamente. Medidas como la fuerza de agarre o la velocidad de la marcha quedan fuera de este juego.
 
-## Instalación (Miniconda, equipo nuevo)
+## Modo de empleo
 
-Necesitas **Miniconda** y una webcam (sin cámara se puede probar con `--tracker mouse`).
+- Necesitas **Miniconda** y una webcam (sin cámara se puede probar con `--tracker mouse`).
+- Asegúrate de tener instalados todos los requerimientos
+```bash
+pip install requirements.txt
+```
+- Desde el Anaconda Poweshell:
 
-1. Instala Miniconda: <https://www.anaconda.com/docs/getting-started/miniconda/install>
-2. Abre una terminal (en Windows, **Anaconda PowerShell Prompt**) y entra en la carpeta del proyecto:
+1. Crea el entorno y descarga el modelo:
    ```bash
-   cd ruta/a/beat_saber_ipm
-   ```
-3. Crea el entorno y descarga el modelo con **un solo script**:
-   ```bash
-   bash setup.sh          # Linux / macOS
-   .\setup.ps1            # Windows (Anaconda PowerShell Prompt)
-   ```
-   Equivale a hacerlo a mano:
-   ```bash
-   conda env create -f environment.yml     # entorno IPM_beat_saber con Python 3.12
+   conda env create -f environment.yml
    conda activate IPM_beat_saber
-   python download_models.py               # modelo de MediaPipe en detection_models/
+   python download_models.py
    ```
-4. Activa el entorno y ejecuta:
+2. Activa el entorno y ejecuta:
    ```bash
    conda activate IPM_beat_saber
    python main.py
    ```
 
-Las versiones (`mediapipe==0.10.21`, `numpy==1.26.4`, `opencv-contrib-python==4.11.0.86`, `pygame==2.6.1`) son las del repositorio base de la práctica. Si ya tienes un entorno propio, también vale `pip install -r requirements.txt` con Python 3.12.
-
-## Uso
-
-```bash
-python main.py                         # webcam, nivel normal
-python main.py --level suave           # suave | normal | intenso
-python main.py --player Ana            # identificador que se guarda en las estadísticas
-python main.py --camera 1              # otra cámara
-python main.py --tracker mouse         # sin cámara: ratón = mano derecha, Ctrl = izquierda
-python main.py --tracker sim           # manos simuladas (demo)
-python main.py --fullscreen
-```
 
 **Teclas:** `1`-`3` nivel · `ENTER` jugar · `C` calibrar · `P` pausa · `ESC` pausa / abandonar / salir · `R` repetir (en resultados).
 
@@ -68,7 +50,7 @@ python main.py --fullscreen
 
 - Cada bloque aparece unos instantes antes de su momento y un aro blanco se cierra sobre él: hay que golpearlo cuando el aro lo alcanza.
 - Se golpea con **la mano de su color** (**I** = izquierda, roja; **D** = derecha, azul) y **en movimiento**: pasar la mano rápido, no apoyarla. Usar la otra mano rompe la racha.
-- **Perfecto** (100 pts), **Bien** (70) y **OK** (40) según la precisión temporal; cada 10 aciertos seguidos sube el multiplicador (máx. x4).
+- **Perfecto** (100 pts), **Bien** (70) y **OK** (40) según la precisión temporal, cada 10 aciertos seguidos sube el multiplicador.
 
 ## Estadísticas guardadas
 
@@ -98,25 +80,7 @@ webcam ─► tracking.py ──► calibration.py ──► game.py ──► r
 
 Convención de coordenadas: `x`, `y` entre 0 y 1, imagen en modo espejo, `left` = mano izquierda del jugador, `valid` por mano y `timestamp` en segundos.
 
-### Patrones propios (charts)
 
-Archivos JSON en `assets/charts/`; se usan con `--chart ruta.json`:
-
-```json
-{"title": "Mi canción", "bpm": 120, "offset": 0.0, "audio": "mi_cancion.ogg",
- "notes": [{"beat": 4, "hand": "right", "col": 1, "row": 2},
-           {"beat": 5, "hand": "left",  "col": 0, "row": 1}]}
-```
-
-`beat` (o `time`, en segundos) = cuándo golpear · `hand` = `left`/`right` · `col` 0–3 y `row` 0–2 = celda · `audio` es opcional (archivo en `assets/audio/`); sin audio suena un metrónomo. `python rhythm.py` regenera los charts de los tres niveles.
-
-## Pruebas
-
-```bash
-python -m pytest -q
-```
-
-Cubren las reglas del juego, los niveles, la calibración, las métricas y una partida completa con manos simuladas.
 
 ## Limitaciones y trabajo futuro
 
