@@ -5,4 +5,3 @@ numpy==1.26.4
 opencv-contrib-python==4.11.0.86  # captura de la cámara (lo exige mediapipe)
 pygame==2.6.1                     # gráficos, interacción y audio
 
-# Para ejecutar las pruebas:  pip install pytest
