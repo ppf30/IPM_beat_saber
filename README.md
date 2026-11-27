@@ -70,12 +70,6 @@ python main.py --fullscreen
 - Se golpea con **la mano de su color** (**I** = izquierda, roja; **D** = derecha, azul) y **en movimiento**: pasar la mano rápido, no apoyarla. Usar la otra mano rompe la racha.
 - **Perfecto** (100 pts), **Bien** (70) y **OK** (40) según la precisión temporal; cada 10 aciertos seguidos sube el multiplicador (máx. x4).
 
-| Nivel | Tempo | Ventana de acierto | Aviso del bloque | Velocidad mínima | Bloques |
-| --- | --- | --- | --- | --- | --- |
-| suave | 70 bpm | ±0,35 s | 1,8 s | baja | más grandes |
-| normal | 100 bpm | ±0,25 s | 1,2 s | media | tamaño estándar |
-| intenso | 120 bpm | ±0,20 s | 1,0 s | alta | tamaño estándar |
-
 ## Estadísticas guardadas
 
 Al terminar cada partida se escribe en `results/`:
@@ -130,12 +124,3 @@ Cubren las reglas del juego, los niveles, la calibración, las métricas y una p
 - La fatiga solo es significativa en sesiones largas; las sesiones de demostración duran menos de un minuto.
 - Faltan validación clínica y valores de referencia por edad; haría falta un estudio con usuarios y profesionales sanitarios.
 - Mejoras posibles: música real con su patrón, informe gráfico de evolución por jugador, modo sentado con una rejilla adaptada y corrección de la latencia de la cámara.
-
-## Entrega
-
-```bash
-python download_models.py                                       # opcional: incluye el modelo en el zip
-python empaquetar.py nombre_apellido1_apellido2_nombre_apellido1_apellido2
-```
-
-Genera el `.zip` con el nombre completo de los integrantes, sin entornos, cachés ni resultados personales.
