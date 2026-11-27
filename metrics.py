@@ -1,17 +1,5 @@
-"""Cálculo y exportación de estadísticas.
+"""Calculo y exportacion de estadisticas de la partida"""
 
-Cada partida genera:
-
-* ``results/<fecha>_<jugador>_notes.csv``: una fila por bloque (para analizar
-  tiempos de reacción, manos, etc.).
-* Una fila nueva en ``results/summary.csv``: resumen de la partida, pensado
-  para seguir la evolución de cada jugador entre sesiones.
-
-Indicadores funcionales (orientativos, **no son un diagnóstico**): precisión
-temporal, velocidad del golpe, amplitud de movimiento (en anchos de hombro),
-simetría entre brazos y caída de rendimiento entre la primera y la segunda
-mitad de la sesión (fatiga).
-"""
 from __future__ import annotations
 
 import csv
@@ -29,6 +17,36 @@ from models import HIT_JUDGEMENTS, Hand, Judgement
 
 @dataclass
 class SessionSummary:
+    """Resumen metrico de una sesion de juego
+
+    Attributes:
+        timestamp (str): Fecha y hora de registro de la partida
+        player (str): Nombre o identificador del jugador
+        level (str): Nivel de dificultad de la partida
+        chart (str): Titulo del patron o cancion jugada
+        total_notes (int): Numero total de bloques en la partida
+        hits (int): Cantidad de bloques golpeados correctamente
+        misses (int): Cantidad de bloques no golpeados a tiempo
+        wrong_hand (int): Cantidad de golpes realizados con la mano incorrecta
+        perfect (int): Cantidad de golpes con evaluacion perfecta
+        good (int): Cantidad de golpes con evaluacion buena
+        ok (int): Cantidad de golpes con evaluacion aceptable
+        accuracy (float): Proporcion de aciertos respecto al total de bloques
+        score (int): Puntuacion final obtenida
+        max_combo (int): Mayor racha consecutiva de aciertos
+        mean_error_ms (float): Error medio de tiempo en milisegundos con signo
+        mean_abs_error_ms (float): Error absoluto medio de tiempo en milisegundos
+        accuracy_left (float): Precision obtenida con la mano izquierda
+        accuracy_right (float): Precision obtenida con la mano derecha
+        tracking_loss_left (float): Fraccion de fotogramas sin deteccion de la mano izquierda
+        tracking_loss_right (float): Fraccion de fotogramas sin deteccion de la mano derecha
+        mean_hit_speed_px_s (float): Velocidad media de la mano al golpear en pixeles por segundo
+        accuracy_drop_pp (float): Diferencia de precision en puntos porcentuales entre mitades
+        speed_drop_pct (float): Variacion porcentual de velocidad entre primera y segunda mitad
+        rom_x (float): Rango horizontal de movimiento en anchos de hombro
+        rom_y (float): Rango vertical de movimiento en anchos de hombro
+    """
+
     timestamp: str
     player: str
     level: str
@@ -40,24 +58,31 @@ class SessionSummary:
     perfect: int
     good: int
     ok: int
-    accuracy: float            # aciertos / bloques totales
+    accuracy: float
     score: int
     max_combo: int
-    mean_error_ms: float       # sesgo: > 0 = golpea tarde de media
-    mean_abs_error_ms: float   # precisión temporal
+    mean_error_ms: float
+    mean_abs_error_ms: float
     accuracy_left: float
     accuracy_right: float
-    tracking_loss_left: float  # fracción de fotogramas sin detectar la mano
+    tracking_loss_left: float
     tracking_loss_right: float
-    mean_hit_speed_px_s: float  # velocidad media de la mano al golpear (px/s de pantalla)
-    accuracy_drop_pp: float     # fatiga: puntos de precisión perdidos de la 1ª a la 2ª mitad
-    speed_drop_pct: float       # fatiga: % de velocidad perdida de la 1ª a la 2ª mitad
-    rom_x: float                # amplitud horizontal alcanzada (anchos de hombro); 0 = no disponible
-    rom_y: float                # amplitud vertical alcanzada (anchos de hombro); 0 = no disponible
+    mean_hit_speed_px_s: float
+    accuracy_drop_pp: float
+    speed_drop_pct: float
+    rom_x: float
+    rom_y: float
 
 
 def _half_stats(events) -> tuple[float, float]:
-    """(precisión, velocidad media de golpe) de una lista de resultados."""
+    """Calcula la precision y la velocidad media de golpe para un subconjunto de eventos
+
+    Args:
+        events (list[GameEvent]): Lista de eventos de partida a evaluar
+
+    Returns:
+        tuple[float, float]: Tupla con la precision y la velocidad media en px/s
+    """
     if not events:
         return 0.0, 0.0
     hits = [e for e in events if e.judgement in HIT_JUDGEMENTS]
@@ -71,8 +96,20 @@ def summarize(
     now: Optional[datetime] = None,
     level: str = "",
     calibration: Optional[Calibration] = None,
-    camera_aspect: float = 0.75,
-) -> SessionSummary:
+    camera_aspect: float = 0.75,) -> SessionSummary:
+    """Genera el resumen estadistico de una partida finalizada
+
+    Args:
+        game (Game): Instancia de partida con resultados y metricas acumuladas
+        player (str): Nombre del jugador para asociar al resumen
+        now (Optional[datetime]): Marca temporal opcional para el registro
+        level (str): Nivel de dificultad de la partida
+        calibration (Optional[Calibration]): Calibracion de movimiento usada en la sesion
+        camera_aspect (float): Relacion de aspecto usada para calcular el rango de movimiento
+
+    Returns:
+        SessionSummary: Estructura con los indicadores calculados de la sesion
+    """
     results = game.results
     hit_events = [r for r in results if r.judgement in HIT_JUDGEMENTS]
 
@@ -123,10 +160,17 @@ def summarize(
     )
 
 
-def export_session(
-    game: Game, summary: SessionSummary, results_dir: Path
-) -> tuple[Path, Path]:
-    """Escribe el CSV de bloques y añade el resumen a ``summary.csv``."""
+def export_session(game: Game, summary: SessionSummary, results_dir: Path) -> tuple[Path, Path]:
+    """Exporta el detalle de bloques a un archivo CSV y agrega el resumen a summary csv
+
+    Args:
+        game (Game): Partida con los resultados detallados por bloque
+        summary (SessionSummary): Resumen estadistico de la sesion
+        results_dir (Path): Directorio destino donde se guardan los archivos CSV
+
+    Returns:
+        tuple[Path, Path]: Rutas generadas para el CSV de bloques y el CSV de resumen
+    """
     results_dir = Path(results_dir)
     results_dir.mkdir(parents=True, exist_ok=True)
     stamp = re.sub(r"[^0-9]", "", summary.timestamp)
@@ -155,3 +199,4 @@ def export_session(
             writer.writeheader()
         writer.writerow(asdict(summary))
     return notes_path, summary_path
+

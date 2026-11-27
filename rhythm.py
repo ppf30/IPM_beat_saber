@@ -1,13 +1,5 @@
-"""Patrones de bloques (charts) y reloj de la partida. El juego no tiene sonido.
+"""Patrones de bloques y reloj de la partida"""
 
-Un chart propio es un JSON que se usa con ``python main.py --chart ruta.json``::
-
-    {"title": "Mi patrón", "bpm": 100,
-     "notes": [{"beat": 4, "hand": "right", "col": 1, "row": 2}, ...]}
-
-* ``beat``: cuándo debe golpearse el bloque (el beat 0 es el inicio de la partida).
-* ``hand``: ``left`` o ``right``.  ``col`` (0-3) y ``row`` (0-2): celda de la rejilla.
-"""
 from __future__ import annotations
 
 import json
@@ -21,7 +13,17 @@ from models import Chart, ChartNote, Hand
 
 
 def load_chart(path: Path) -> Chart:
-    """Lee un chart JSON. Lanza ``ValueError`` si el archivo no tiene el formato esperado."""
+    """Lee un chart JSON y devuelve la estructura con las notas ordenadas por tiempo
+
+    Args:
+        path (Path): Ruta del archivo JSON del chart
+
+    Returns:
+        Chart: Objeto con titulo, bpm y lista de notas
+
+    Raises:
+        ValueError: Si el archivo no tiene el formato esperado
+    """
     try:
         data = json.loads(Path(path).read_text(encoding="utf-8"))
         beat = 60.0 / float(data["bpm"])
@@ -35,23 +37,26 @@ def load_chart(path: Path) -> Chart:
     return Chart(str(data.get("title", "Sin título")), float(data["bpm"]), notes)
 
 
-def generate_demo_chart(
-    bpm: float = 100.0, bars: int = 16, seed: int = 7, title: str = "Demo"
-) -> Chart:
-    """Chart de demostración con dificultad creciente en cuatro tramos.
+def generate_demo_chart(bpm: float = 100.0, bars: int = 16, seed: int = 7, title: str = "Demo") -> Chart:
+    """Genera un chart de demostracion con dificultad progresiva en cuatro tramos
 
-    1. Un bloque cada 2 beats, alternando manos.
-    2. Un bloque por beat, alternando manos.
-    3. Igual, con golpes simultáneos con ambas manos al inicio de cada compás.
-    4. Un bloque por beat más "semi-beats" en los tiempos 2 y 4.
+    Args:
+        bpm (float): Pulsaciones por minuto del patron
+        bars (int): Cantidad de compases a generar
+        seed (int): Semilla para el generador aleatorio
+        title (str): Titulo asignado al chart
+
+    Returns:
+        Chart: Chart generado y ordenado por tiempo de aparicion
     """
     rng = random.Random(seed)
     beat = 60.0 / bpm
-    cols = {Hand.LEFT: (0, 1, 2), Hand.RIGHT: (1, 2, 3)}  # cada mano cubre "su" lado
+    cols = {Hand.LEFT: (0, 1, 2), Hand.RIGHT: (1, 2, 3)}
     last: dict[Hand, Optional[tuple[int, int]]] = {Hand.LEFT: None, Hand.RIGHT: None}
     notes: list[ChartNote] = []
 
     def add(beat_pos: float, hand: Hand, avoid: Optional[tuple[int, int]] = None) -> tuple[int, int]:
+        """Agrega una nota aleatoria evitando repetir celda o coincidir con otra mano"""
         options = [
             (c, r) for c in cols[hand] for r in range(3)
             if (c, r) != last[hand] and (c, r) != avoid
@@ -67,7 +72,7 @@ def generate_demo_chart(
     for bar in range(bars):
         stage = min(bar // stage_len, 3)
         for b in range(4):
-            pos = 4 + bar * 4 + b  # el primer compás queda libre
+            pos = 4 + bar * 4 + b
             if stage == 0 and b % 2 == 1:
                 continue
             if stage == 2 and b == 0:
@@ -84,36 +89,68 @@ def generate_demo_chart(
 
 
 def chart_for_level(level: str = DEFAULT_LEVEL) -> Chart:
-    """Chart generado para el nivel indicado (tempo y duración según ``LEVEL_CHARTS``)."""
+    """Devuelve el chart de demostracion correspondiente al nivel indicado
+
+    Args:
+        level (str): Clave del nivel dentro de LEVEL_CHARTS
+
+    Returns:
+        Chart: Chart configurado para el nivel solicitado
+    """
     return generate_demo_chart(title=f"Demo {level}", **LEVEL_CHARTS[level])
 
 
 class SongClock:
-    """Tiempo de la partida: negativo durante la cuenta atrás y 0 cuando aparece el primer compás."""
+    """Controla el tiempo de la partida con soporte para cuenta atras y pausa
+
+    Attributes:
+        paused (bool): Indica si el reloj esta pausado en este momento
+    """
 
     def __init__(self, countdown: float, clock: Callable[[], float] = time.monotonic):
+        """Inicializa el reloj de la cancion con su cuenta atras inicial
+
+        Args:
+            countdown (float): Duracion de la cuenta atras en segundos
+            clock (Callable): Funcion que devuelve el tiempo actual en segundos
+        """
         self._countdown = countdown
         self._clock = clock
         self._t0 = clock()
         self._paused_at: Optional[float] = None
 
     def start(self) -> None:
+        """Reinicia el tiempo inicial y limpia el estado de pausa"""
         self._t0 = self._clock()
         self._paused_at = None
 
     def song_time(self) -> float:
+        """Devuelve el tiempo transcurrido de la partida descontando la cuenta atras
+
+        Returns:
+            float: Tiempo actual en segundos relativo al inicio del primer compas
+        """
         now = self._paused_at if self._paused_at is not None else self._clock()
         return now - self._t0 - self._countdown
 
     @property
     def paused(self) -> bool:
+        """Indica si el reloj se encuentra pausado
+
+        Returns:
+            bool: Verdadero si esta pausado y falso en caso contrario
+        """
         return self._paused_at is not None
 
     def pause(self) -> None:
+        """Guarda el instante en que se pausa el reloj"""
         if self._paused_at is None:
             self._paused_at = self._clock()
 
     def resume(self) -> None:
+        """Reanuda el reloj ajustando el inicio con el tiempo pausado"""
         if self._paused_at is not None:
             self._t0 += self._clock() - self._paused_at
             self._paused_at = None
+
+            

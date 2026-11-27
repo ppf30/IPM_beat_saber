@@ -1,12 +1,5 @@
-"""Punto de entrada: conecta tracking, calibración, juego, dibujo y métricas.
+"""Punto de entrada principal de la aplicacion"""
 
-Uso::
-
-    python main.py                          # webcam, nivel normal
-    python main.py --level suave --player Ana
-    python main.py --tracker mouse          # sin cámara: ratón (Ctrl = mano izquierda)
-    python main.py --chart assets/charts/ejemplo.json
-"""
 from __future__ import annotations
 
 import argparse
@@ -32,6 +25,14 @@ MENU, CALIBRATION, PLAY, RESULTS = "menu", "calibration", "play", "results"
 
 
 def parse_args(argv=None) -> argparse.Namespace:
+    """Analiza los argumentos de linea de comandos para configurar la ejecucion
+
+    Args:
+        argv: Lista opcional de argumentos a procesar
+
+    Returns:
+        argparse.Namespace: Argumentos parseados con sus valores por defecto
+    """
     p = argparse.ArgumentParser(description="Beat Saber IPM: juego serio con webcam")
     p.add_argument("--tracker", choices=["webcam", "mouse"], default="webcam")
     p.add_argument("--camera", type=int, default=None, help="índice de la cámara")
@@ -43,12 +44,43 @@ def parse_args(argv=None) -> argparse.Namespace:
 
 
 class App:
+    """Coordina el ciclo de vida, pantallas, entrada y partida del juego
+
+    Attributes:
+        cfg (Config): Configuracion base de la aplicacion
+        player (str): Nombre del jugador actual
+        screen (pygame.Surface): Ventana principal de Pygame
+        renderer (Renderer): Renderizador encargado del dibujo
+        clock (pygame.time.Clock): Reloj de cuadros por segundo
+        tracker (HandTracker): Sistema de seguimiento de manos activo
+        level (str): Nivel de dificultad seleccionado
+        custom_chart (Optional[Chart]): Patron cargado desde archivo si existe
+        chart (Chart): Patron activo para la partida
+        calibrated (bool): Indica si hay calibracion disponible
+        calibration (Calibration): Transformacion de calibracion activa
+        smoother (HandSmoother): Suavizador temporal de posiciones de manos
+        calibrator (Calibrator): Gestor del proceso de calibracion
+        cal_phase (str): Fase actual de la calibracion
+        mode (str): Pantalla o modo actual de la aplicacion
+        message (str): Mensaje informativo mostrado en el menu
+        game (Optional[Game]): Instancia de la partida en curso
+        song_clock (Optional[SongClock]): Reloj temporal de la partida
+        summary: Resumen estadistico de la ultima sesion
+        saved_to (str): Ruta donde se guardaron los resultados
+        running (bool): Indica si el bucle principal sigue activo
+    """
+
     def __init__(self, args: argparse.Namespace, cfg: Config = DEFAULT_CONFIG):
+        """Inicializa la ventana, el tracker, la calibracion y el estado inicial
+
+        Args:
+            args (argparse.Namespace): Argumentos de ejecucion parseados
+            cfg (Config): Configuracion general del juego
+        """
         if args.camera is not None:
             cfg = replace(cfg, camera_index=args.camera)
         self.cfg = cfg
         self.player = args.player
-        # Solo se inician vídeo y fuentes (no pygame.init()): el juego no usa sonido.
         pygame.display.init()
         pygame.font.init()
         flags = pygame.FULLSCREEN | pygame.SCALED if args.fullscreen else 0
@@ -70,7 +102,7 @@ class App:
             self.calibrated, self.calibration = True, Calibration.identity()
         self.smoother = HandSmoother(cfg)
         self.calibrator = Calibrator(cfg)
-        self.cal_phase = "ready"  # "ready" (esperando ESPACIO) o "capturing"
+        self.cal_phase = "ready"
 
         self.mode = MENU
         self.message = ""
@@ -80,14 +112,19 @@ class App:
         self.saved_to = ""
         self.running = True
 
-    # ------------------------------------------------------------ transiciones
     def set_level(self, level: str) -> None:
+        """Cambia el nivel de dificultad y actualiza el chart si no hay uno propio
+
+        Args:
+            level (str): Clave del nuevo nivel seleccionado
+        """
         self.level = level
         self.chart = self.custom_chart or chart_for_level(level)
 
     def start_game(self) -> None:
+        """Prepara y comienza una nueva partida con la configuracion del nivel"""
         play_cfg = level_config(self.cfg, self.level)
-        self.renderer.cfg = play_cfg  # el dibujo debe usar los mismos tamaños que las colisiones
+        self.renderer.cfg = play_cfg
         self.game = Game(self.chart, play_cfg)
         self.song_clock = SongClock(play_cfg.countdown)
         self.smoother = HandSmoother(self.cfg)
@@ -95,6 +132,7 @@ class App:
         self.mode = PLAY
 
     def finish_game(self) -> None:
+        """Calcula las metricas finales, exporta los datos y pasa a resultados"""
         self.summary = summarize(
             self.game,
             self.player,
@@ -110,11 +148,13 @@ class App:
         self.mode = RESULTS
 
     def start_calibration(self) -> None:
+        """Inicia la pantalla de calibracion en fase de espera"""
         self.calibrator = Calibrator(self.cfg)
         self.cal_phase = "ready"
         self.mode = CALIBRATION
 
     def finish_calibration(self) -> None:
+        """Guarda la calibracion si es valida y regresa al menu principal"""
         result = self.calibrator.result()
         if result is None:
             self.message = "No se detectaron suficientes datos. Inténtalo de nuevo (tecla C)."
@@ -125,10 +165,15 @@ class App:
         self.mode = MENU
 
     def toggle_pause(self) -> None:
+        """Alterna entre pausa y reanudacion del reloj de la partida"""
         (self.song_clock.resume if self.song_clock.paused else self.song_clock.pause)()
 
-    # ------------------------------------------------------------------ eventos
     def handle_key(self, key: int) -> None:
+        """Procesa una pulsacion de tecla segun el modo actual de la aplicacion
+
+        Args:
+            key (int): Codigo de tecla de Pygame presionada
+        """
         if self.mode == MENU:
             if key == pygame.K_RETURN:
                 self.message = ""
@@ -150,7 +195,7 @@ class App:
                 self.toggle_pause()
             elif key == pygame.K_ESCAPE:
                 if self.song_clock.paused:
-                    self.mode = MENU  # abandonar la partida
+                    self.mode = MENU
                 else:
                     self.toggle_pause()
         elif self.mode == RESULTS:
@@ -159,8 +204,8 @@ class App:
             elif key == pygame.K_r:
                 self.start_game()
 
-    # ---------------------------------------------------------------- por frame
     def step(self) -> None:
+        """Ejecuta la logica y el dibujo correspondientes a un fotograma"""
         now = time.monotonic()
         raw = self.tracker.read()
         preview = self.tracker.preview()
@@ -193,6 +238,7 @@ class App:
         pygame.display.flip()
 
     def run(self) -> None:
+        """Arranca el tracker, ejecuta el bucle principal y libera recursos al salir"""
         self.tracker.start()
         try:
             while self.running:
@@ -209,6 +255,14 @@ class App:
 
 
 def main(argv=None) -> int:
+    """Crea y ejecuta la aplicacion manejando errores esperados de inicio o ejecucion
+
+    Args:
+        argv: Argumentos opcionales de linea de comandos
+
+    Returns:
+        int: Codigo de salida del proceso
+    """
     try:
         App(parse_args(argv)).run()
     except (FileNotFoundError, RuntimeError, ValueError) as exc:
@@ -219,3 +273,4 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+    

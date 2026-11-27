@@ -1,11 +1,5 @@
-"""Descarga el modelo de MediaPipe Pose Landmarker en ``detection_models/``.
+"""Descarga los modelos de MediaPipe Pose Landmarker"""
 
-Uso:
-    python download_models.py            # modelo "full" (el que usa el juego)
-    python download_models.py --all      # además "lite" y "heavy"
-
-Solo usa la biblioteca estándar de Python, así que funciona en un entorno nuevo.
-"""
 from __future__ import annotations
 
 import argparse
@@ -24,6 +18,15 @@ TARGET_DIR = Path(__file__).resolve().parent / "detection_models"
 
 
 def download(name: str, url: str) -> bool:
+    """Descarga un archivo de modelo si no existe previamente en el directorio destino
+
+    Args:
+        name (str): Nombre del archivo de modelo a guardar
+        url (str): Direccion URL desde donde descargar el modelo
+
+    Returns:
+        bool: Verdadero si el archivo esta disponible o se descargo con exito
+    """
     dest = TARGET_DIR / name
     if dest.exists() and dest.stat().st_size > 0:
         print(f"[ok] {name} ya existe, se omite la descarga.")
@@ -51,6 +54,11 @@ def download(name: str, url: str) -> bool:
 
 
 def main() -> int:
+    """Procesa los argumentos de entrada y ejecuta la descarga de modelos
+
+    Returns:
+        int: Cero si todas las descargas fueron exitosas o uno en caso de error
+    """
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--all", action="store_true", help="descargar también lite y heavy")
     args = parser.parse_args()
