@@ -111,7 +111,8 @@ class WebcamTracker(HandTracker):
                 "Prueba con --camera N o usa --tracker mouse."
             )
         options = vision.PoseLandmarkerOptions(
-            base_options=mp_python.BaseOptions(model_asset_path=str(self.cfg.pose_model_path)),
+            # Python lee rutas Unicode; MediaPipe puede fallar con ellas en Windows.
+            base_options=mp_python.BaseOptions(model_asset_buffer=self.cfg.pose_model_path.read_bytes()),
             running_mode=vision.RunningMode.VIDEO,
             num_poses=1,
             min_pose_detection_confidence=0.5,
