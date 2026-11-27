@@ -7,7 +7,7 @@ from config import DEFAULT_CONFIG, Config
 from game import Game
 from metrics import export_session, summarize
 from models import Hand, HandPosition, HandsFrame, Judgement
-from rhythm import Conductor, chart_from_dict, chart_to_dict, generate_demo_chart
+from rhythm import SongClock, chart_for_level, generate_demo_chart, load_chart
 
 
 # ---------------------------------------------------------------- rhythm
@@ -26,36 +26,46 @@ def test_demo_chart_is_valid_and_sorted():
         seen.add(key)
 
 
-def test_chart_json_roundtrip():
-    chart = generate_demo_chart(bpm=120, bars=8)
-    again = chart_from_dict(chart_to_dict(chart))
-    assert again.bpm == 120 and len(again.notes) == len(chart.notes)
-    for a, b in zip(chart.notes, again.notes):
-        assert a.hand is b.hand and (a.col, a.row) == (b.col, b.row)
-        assert a.time == pytest.approx(b.time, abs=1e-3)
+def test_load_chart_from_json(tmp_path):
+    path = tmp_path / "c.json"
+    path.write_text(
+        '{"title": "T", "bpm": 60, "notes": ['
+        '{"beat": 3, "hand": "right", "col": 3, "row": 2},'
+        '{"beat": 2, "hand": "left", "col": 0, "row": 0}]}',
+        encoding="utf-8",
+    )
+    chart = load_chart(path)
+    assert chart.title == "T" and chart.bpm == 60
+    assert [(n.time, n.hand) for n in chart.notes] == [(2.0, Hand.LEFT), (3.0, Hand.RIGHT)]
 
 
-def test_chart_accepts_beat_or_time():
-    chart = chart_from_dict({"bpm": 60, "offset": 1.0, "notes": [
-        {"beat": 2, "hand": "left", "col": 0, "row": 0},
-        {"time": 10.5, "hand": "right", "col": 3, "row": 2},
-    ]})
-    assert [n.time for n in chart.notes] == [3.0, 10.5]
+def test_load_chart_rejects_bad_files(tmp_path):
+    path = tmp_path / "bad.json"
+    path.write_text('{"title": "sin notas"}', encoding="utf-8")
+    with pytest.raises(ValueError):
+        load_chart(path)
 
 
-def test_conductor_clock_and_pause():
+def test_example_chart_in_repo_is_valid():
+    chart = load_chart(DEFAULT_CONFIG.pose_model_path.parent.parent / "assets" / "charts" / "ejemplo.json")
+    cfg = DEFAULT_CONFIG
+    assert len(chart.notes) > 0
+    assert all(0 <= n.col < cfg.grid_cols and 0 <= n.row < cfg.grid_rows for n in chart.notes)
+
+
+def test_song_clock_countdown_and_pause():
     now = [100.0]
-    cond = Conductor(generate_demo_chart(), clock=lambda: now[0], audio=False)
-    cond.start()
-    assert cond.song_time() == pytest.approx(-DEFAULT_CONFIG.countdown)
-    now[0] += DEFAULT_CONFIG.countdown + 2.0
-    assert cond.song_time() == pytest.approx(2.0)
-    cond.pause()
+    clock = SongClock(3.0, clock=lambda: now[0])
+    clock.start()
+    assert clock.song_time() == pytest.approx(-3.0)
     now[0] += 5.0
-    assert cond.song_time() == pytest.approx(2.0)
-    cond.resume()
+    assert clock.song_time() == pytest.approx(2.0)
+    clock.pause()
+    now[0] += 5.0
+    assert clock.song_time() == pytest.approx(2.0) and clock.paused
+    clock.resume()
     now[0] += 1.0
-    assert cond.song_time() == pytest.approx(3.0)
+    assert clock.song_time() == pytest.approx(3.0) and not clock.paused
 
 
 # ----------------------------------------------------------- calibration
@@ -113,15 +123,13 @@ def test_summary_and_export(tmp_path):
     from models import Chart, ChartNote
     chart = Chart("t", 100, [ChartNote(1.0, Hand.RIGHT, 1, 1), ChartNote(2.0, Hand.LEFT, 1, 1)])
     game = Game(chart)
-    game.total = 2
-    from game import _NoteState  # resuelve los dos bloques a mano
     game._resolve(game._notes[0], Judgement.PERFECT, 0.05, 900.0, 100)
     game._resolve(game._notes[1], Judgement.MISS, None, None, 0)
     game.frames_total, game.frames_lost[Hand.LEFT] = 10, 5
     s = summarize(game, "Ana")
     assert (s.hits, s.misses, s.accuracy) == (1, 1, 0.5)
     assert s.mean_error_ms == 50.0 and s.accuracy_right == 1.0 and s.accuracy_left == 0.0
-    assert s.balance_left == 0.0 and s.tracking_loss_left == 0.5
+    assert s.tracking_loss_left == 0.5
 
     notes_csv, summary_csv = export_session(game, s, tmp_path)
     export_session(game, s, tmp_path)  # segunda partida: añade fila, no repite cabecera
@@ -133,8 +141,6 @@ def test_summary_and_export(tmp_path):
 # ------------------------------------------------- niveles y datos de salud
 def test_levels_change_playability_and_have_charts():
     from config import LEVELS, level_config
-    from rhythm import chart_for_level
-
     easy, normal, hard = (level_config(DEFAULT_CONFIG, n) for n in ("suave", "normal", "intenso"))
     assert easy.ok_window > normal.ok_window > hard.ok_window
     assert easy.approach_time > normal.approach_time > hard.approach_time

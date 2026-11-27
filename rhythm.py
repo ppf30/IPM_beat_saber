@@ -1,13 +1,12 @@
-"""Lectura de patrones de bloques y sincronización temporal.
+"""Patrones de bloques (charts) y reloj de la partida. El juego no tiene sonido.
 
-Formato de un chart (JSON) en ``assets/charts/``::
+Un chart propio es un JSON que se usa con ``python main.py --chart ruta.json``::
 
-    {"title": "Demo", "bpm": 100, "offset": 0.0, "audio": "cancion.ogg",
+    {"title": "Mi patrón", "bpm": 100,
      "notes": [{"beat": 4, "hand": "right", "col": 1, "row": 2}, ...]}
 
-* ``beat`` (o ``time`` en segundos) indica cuándo debe golpearse el bloque.
-* ``hand`` es ``left`` o ``right``; ``col`` 0-3 y ``row`` 0-2 son la celda.
-* ``audio`` es opcional. Sin audio, suena un metrónomo sencillo.
+* ``beat``: cuándo debe golpearse el bloque (el beat 0 es el inicio de la partida).
+* ``hand``: ``left`` o ``right``.  ``col`` (0-3) y ``row`` (0-2): celda de la rejilla.
 """
 from __future__ import annotations
 
@@ -17,51 +16,23 @@ import time
 from pathlib import Path
 from typing import Callable, Optional
 
-import numpy as np
-
-from config import DEFAULT_CONFIG, DEFAULT_LEVEL, LEVEL_CHARTS, Config
+from config import DEFAULT_LEVEL, LEVEL_CHARTS
 from models import Chart, ChartNote, Hand
 
 
-# --------------------------------------------------------------------------
-# Charts
-# --------------------------------------------------------------------------
-def chart_from_dict(data: dict) -> Chart:
-    bpm = float(data["bpm"])
-    offset = float(data.get("offset", 0.0))
-    beat = 60.0 / bpm
-    notes = []
-    for n in data["notes"]:
-        t = float(n["time"]) if "time" in n else offset + float(n["beat"]) * beat
-        notes.append(ChartNote(t, Hand(n["hand"]), int(n["col"]), int(n["row"])))
-    notes.sort(key=lambda n: n.time)
-    return Chart(str(data.get("title", "Sin título")), bpm, notes, data.get("audio"), offset)
-
-
-def chart_to_dict(chart: Chart) -> dict:
-    return {
-        "title": chart.title,
-        "bpm": chart.bpm,
-        "offset": chart.offset,
-        "audio": chart.audio,
-        "notes": [
-            {
-                "beat": round((n.time - chart.offset) / chart.beat_duration, 4),
-                "hand": n.hand.value,
-                "col": n.col,
-                "row": n.row,
-            }
-            for n in chart.notes
-        ],
-    }
-
-
 def load_chart(path: Path) -> Chart:
-    return chart_from_dict(json.loads(Path(path).read_text(encoding="utf-8")))
-
-
-def save_chart(chart: Chart, path: Path) -> None:
-    Path(path).write_text(json.dumps(chart_to_dict(chart), indent=1), encoding="utf-8")
+    """Lee un chart JSON. Lanza ``ValueError`` si el archivo no tiene el formato esperado."""
+    try:
+        data = json.loads(Path(path).read_text(encoding="utf-8"))
+        beat = 60.0 / float(data["bpm"])
+        notes = [
+            ChartNote(float(n["beat"]) * beat, Hand(n["hand"]), int(n["col"]), int(n["row"]))
+            for n in data["notes"]
+        ]
+    except (KeyError, TypeError, ZeroDivisionError) as exc:
+        raise ValueError(f"Chart no válido ({path}): {exc!r}") from exc
+    notes.sort(key=lambda n: n.time)
+    return Chart(str(data.get("title", "Sin título")), float(data["bpm"]), notes)
 
 
 def generate_demo_chart(
@@ -112,129 +83,37 @@ def generate_demo_chart(
     return Chart(title, bpm, notes)
 
 
-# --------------------------------------------------------------------------
-# Conductor: reloj de la canción, música y metrónomo
-# --------------------------------------------------------------------------
-def _make_tone(freq: float, ms: int = 45, volume: float = 0.35):
-    import pygame
-
-    rate, _fmt, channels = pygame.mixer.get_init()
-    n = int(rate * ms / 1000)
-    t = np.arange(n) / rate
-    wave = (np.sin(2 * np.pi * freq * t) * np.exp(-t * 70) * volume * 32767).astype(np.int16)
-    if channels == 2:
-        wave = np.column_stack([wave, wave])
-    return pygame.sndarray.make_sound(np.ascontiguousarray(wave))
+def chart_for_level(level: str = DEFAULT_LEVEL) -> Chart:
+    """Chart generado para el nivel indicado (tempo y duración según ``LEVEL_CHARTS``)."""
+    return generate_demo_chart(title=f"Demo {level}", **LEVEL_CHARTS[level])
 
 
-class Conductor:
-    """Reloj maestro: ``song_time`` es negativo durante la cuenta atrás y 0 al sonar la música."""
+class SongClock:
+    """Tiempo de la partida: negativo durante la cuenta atrás y 0 cuando aparece el primer compás."""
 
-    def __init__(
-        self,
-        chart: Chart,
-        config: Config = DEFAULT_CONFIG,
-        clock: Callable[[], float] = time.monotonic,
-        audio: bool = True,
-    ):
-        self.chart = chart
-        self.cfg = config
+    def __init__(self, countdown: float, clock: Callable[[], float] = time.monotonic):
+        self._countdown = countdown
         self._clock = clock
-        self._t0 = 0.0
+        self._t0 = clock()
         self._paused_at: Optional[float] = None
-        self._music = False
-        self._music_started = False
-        self._clicks: Optional[tuple] = None
-        self._next_beat = 0
-        if audio:
-            self._init_audio()
 
-    def _init_audio(self) -> None:
-        try:
-            import pygame
-
-            if not pygame.mixer.get_init():
-                pygame.mixer.init()
-            audio_path = self.cfg.audio_dir / self.chart.audio if self.chart.audio else None
-            if audio_path is not None and audio_path.exists():
-                pygame.mixer.music.load(str(audio_path))
-                self._music = True
-            elif pygame.mixer.get_init()[1] == -16:
-                self._clicks = (_make_tone(1500), _make_tone(1000))  # acento, normal
-        except Exception as exc:  # sin audio el juego sigue funcionando
-            print(f"[audio] desactivado: {exc}")
-
-    # -- control ------------------------------------------------------------
     def start(self) -> None:
         self._t0 = self._clock()
         self._paused_at = None
-        self._music_started = False
-        self._next_beat = 0
 
     def song_time(self) -> float:
-        ref = self._paused_at if self._paused_at is not None else self._clock()
-        return ref - self._t0 - self.cfg.countdown
-
-    def update(self) -> float:
-        """Avanza el audio y devuelve el instante actual de la canción."""
-        t = self.song_time()
-        if self._paused_at is not None or t < 0:
-            return t
-        if self._music and not self._music_started:
-            import pygame
-
-            pygame.mixer.music.play()
-            self._music_started = True
-        elif self._clicks and not self._music:
-            beat = self.chart.beat_duration
-            while True:
-                beat_time = self.chart.offset + self._next_beat * beat
-                if beat_time > t or beat_time > self.chart.duration + beat:
-                    break
-                if t - beat_time < 0.1:  # no recuperar clics muy atrasados
-                    self._clicks[0 if self._next_beat % 4 == 0 else 1].play()
-                self._next_beat += 1
-        return t
-
-    def pause(self) -> None:
-        if self._paused_at is None:
-            self._paused_at = self._clock()
-            if self._music_started:
-                import pygame
-
-                pygame.mixer.music.pause()
-
-    def resume(self) -> None:
-        if self._paused_at is not None:
-            self._t0 += self._clock() - self._paused_at
-            self._paused_at = None
-            if self._music_started:
-                import pygame
-
-                pygame.mixer.music.unpause()
+        now = self._paused_at if self._paused_at is not None else self._clock()
+        return now - self._t0 - self._countdown
 
     @property
     def paused(self) -> bool:
         return self._paused_at is not None
 
-    def stop(self) -> None:
-        if self._music_started:
-            import pygame
+    def pause(self) -> None:
+        if self._paused_at is None:
+            self._paused_at = self._clock()
 
-            pygame.mixer.music.stop()
-
-
-def chart_for_level(level: str = DEFAULT_LEVEL, config: Config = DEFAULT_CONFIG) -> Chart:
-    """Chart del nivel: ``assets/charts/<nivel>.json`` si existe; si no, se genera."""
-    path = config.charts_dir / f"{level}.json"
-    if path.exists():
-        return load_chart(path)
-    return generate_demo_chart(title=f"Demo {level}", **LEVEL_CHARTS[level])
-
-
-if __name__ == "__main__":  # python rhythm.py -> regenera assets/charts/<nivel>.json
-    DEFAULT_CONFIG.charts_dir.mkdir(parents=True, exist_ok=True)
-    for lvl, params in LEVEL_CHARTS.items():
-        target = DEFAULT_CONFIG.charts_dir / f"{lvl}.json"
-        save_chart(generate_demo_chart(title=f"Demo {lvl}", **params), target)
-        print(f"Chart del nivel '{lvl}' escrito en {target}")
+    def resume(self) -> None:
+        if self._paused_at is not None:
+            self._t0 += self._clock() - self._paused_at
+            self._paused_at = None

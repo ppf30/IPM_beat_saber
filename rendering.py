@@ -108,7 +108,6 @@ class Renderer:
         self.text("BEAT SABER IPM", self.font_xl, WHITE, (cx, 120), "center")
         self.text("Entrena la coordinación de tus brazos", self.font_m, GREY, (cx, 200), "center")
         self.text(f"Canción: {chart_title}", self.font_m, WHITE, (cx, 275), "center")
-        x = cx - 300
         for i, name in enumerate(LEVELS, start=1):
             selected = name == level
             rect = pygame.Rect(0, 0, 190, 40)
@@ -181,7 +180,6 @@ class Renderer:
         now: float,
         paused: bool = False,
     ) -> None:
-        cfg = self.cfg
         self.screen.blit(self._bg, (0, 0))
         self._draw_grid()
         for note, progress in sorted(game.visible_notes(song_time), key=lambda t: -t[1]):
@@ -288,8 +286,7 @@ class Renderer:
             self.screen.blit(surf, rect)
             pygame.draw.rect(self.screen, GREY, rect, 2)
         self._bar(pygame.Rect(30, self.h - 40, self.w - 60, 14), game.progress(song_time), (140, 120, 255))
-        lost = [("izquierda", Hand.LEFT), ("derecha", Hand.RIGHT)]
-        warn = [name for name, h in lost if not hands.get(h).valid]
-        if warn and song_time >= 0:
-            self.text("No se detecta tu mano " + " ni tu mano ".join(warn), self.font_s,
+        missing = [n for n, h in (("izquierda", Hand.LEFT), ("derecha", Hand.RIGHT)) if not hands.get(h).valid]
+        if missing and song_time >= 0:
+            self.text("No se detecta tu mano " + " ni tu mano ".join(missing), self.font_s,
                       (255, 150, 60), (self.w // 2, self.h - 70), "center")

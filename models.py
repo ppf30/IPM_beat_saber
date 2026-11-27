@@ -59,12 +59,6 @@ class Chart:
     title: str
     bpm: float
     notes: list[ChartNote]
-    audio: Optional[str] = None  # nombre de archivo dentro de assets/audio/
-    offset: float = 0.0          # instante (s) del beat 0
-
-    @property
-    def beat_duration(self) -> float:
-        return 60.0 / self.bpm
 
     @property
     def duration(self) -> float:

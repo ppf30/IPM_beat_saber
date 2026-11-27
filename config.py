@@ -25,8 +25,6 @@ class Config:
     min_visibility: float = 0.5  # confianza mínima para dar una muñeca por válida
 
     # --- Rutas -----------------------------------------------------------
-    charts_dir: Path = BASE_DIR / "assets" / "charts"
-    audio_dir: Path = BASE_DIR / "assets" / "audio"
     results_dir: Path = BASE_DIR / "results"
     calibration_path: Path = BASE_DIR / "calibration.json"
 

@@ -1,6 +1,6 @@
 """Reglas, colisiones, puntuación y estados de partida.
 
-``Game`` no sabe nada de pantalla, cámara ni audio: recibe el tiempo de la
+``Game`` no sabe nada de pantalla ni cámara: recibe el tiempo de la
 canción y la posición de las manos (ya calibradas) y devuelve eventos. Eso lo
 hace fácil de probar con datos sintéticos.
 """
@@ -80,9 +80,6 @@ class Game:
             if not ns.done:
                 out.append((ns.note, ahead / self.cfg.approach_time))
         return out
-
-    def hand_speed(self, hand: Hand) -> float:
-        return self._speed[hand]
 
     # -- bucle principal ----------------------------------------------------
     def update(self, song_time: float, hands: HandsFrame) -> list[GameEvent]:

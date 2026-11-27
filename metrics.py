@@ -45,11 +45,8 @@ class SessionSummary:
     max_combo: int
     mean_error_ms: float       # sesgo: > 0 = golpea tarde de media
     mean_abs_error_ms: float   # precisión temporal
-    hits_left: int
-    hits_right: int
     accuracy_left: float
     accuracy_right: float
-    balance_left: float        # fracción de aciertos con la mano izquierda (0.5 = simétrico)
     tracking_loss_left: float  # fracción de fotogramas sin detectar la mano
     tracking_loss_right: float
     mean_hit_speed_px_s: float  # velocidad media de la mano al golpear (px/s de pantalla)
@@ -114,11 +111,8 @@ def summarize(
         max_combo=game.max_combo,
         mean_error_ms=round(ratio(sum(errors_ms), len(errors_ms)), 1),
         mean_abs_error_ms=round(ratio(sum(abs(e) for e in errors_ms), len(errors_ms)), 1),
-        hits_left=hits_hand[Hand.LEFT],
-        hits_right=hits_hand[Hand.RIGHT],
         accuracy_left=round(ratio(hits_hand[Hand.LEFT], len(per_hand[Hand.LEFT])), 4),
         accuracy_right=round(ratio(hits_hand[Hand.RIGHT], len(per_hand[Hand.RIGHT])), 4),
-        balance_left=round(ratio(hits_hand[Hand.LEFT], len(hit_events)), 4),
         tracking_loss_left=round(ratio(game.frames_lost[Hand.LEFT], frames), 4),
         tracking_loss_right=round(ratio(game.frames_lost[Hand.RIGHT], frames), 4),
         mean_hit_speed_px_s=round(mean(all_speeds), 1) if all_speeds else 0.0,
