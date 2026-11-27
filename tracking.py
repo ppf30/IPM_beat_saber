@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 import threading
 import time
 from abc import ABC, abstractmethod
@@ -101,7 +102,9 @@ class WebcamTracker(HandTracker):
                 f"Falta el modelo de MediaPipe en {self.cfg.pose_model_path}.\n"
                 "Descárgalo con:  python download_models.py"
             )
-        cap = cv.VideoCapture(self.cfg.camera_index)
+        # DirectShow evita fallos de captura de Media Foundation en Windows.
+        backend = cv.CAP_DSHOW if sys.platform == "win32" else cv.CAP_ANY
+        cap = cv.VideoCapture(self.cfg.camera_index, backend)
         cap.set(cv.CAP_PROP_FRAME_WIDTH, self.cfg.camera_size[0])
         cap.set(cv.CAP_PROP_FRAME_HEIGHT, self.cfg.camera_size[1])
         if not cap.isOpened():

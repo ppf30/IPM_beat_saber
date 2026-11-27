@@ -256,7 +256,7 @@ class Renderer:
                 pos = (int(rect.x + p.x * rect.w), int(rect.y + p.y * rect.h))
 
                 icon = pygame.Rect(0, 0, 68, 68)
-                icon.center = (x, 430)
+                icon.center = pos
                 pygame.draw.rect(self.screen, COLORS[hand], icon, border_radius=10)
 
                 pygame.draw.circle(self.screen, WHITE, pos, 14, 2)
