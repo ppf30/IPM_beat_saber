@@ -1,0 +1,14 @@
+# Entorno de Miniconda para el juego. Crear con:
+#   conda env create -f environment.yml
+# Mantener sincronizado con requirements.txt.
+name: IPM_beat_saber
+channels:
+  - defaults
+dependencies:
+  - python=3.12
+  - pip
+  - pip:
+      - mediapipe==0.10.21
+      - numpy==1.26.4
+      - opencv-contrib-python==4.11.0.86
+      - pygame==2.6.1

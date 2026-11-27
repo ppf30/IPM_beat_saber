@@ -1,4 +1,0 @@
-# Dependencias previstas:
-# OpenCV (opencv-python): captura de la cámara.
-# MediaPipe (mediapipe): detección de las muñecas.
-# Pygame (pygame): gráficos, interacción y audio.

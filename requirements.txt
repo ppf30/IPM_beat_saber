@@ -1,0 +1,7 @@
+# Versiones alineadas con el repositorio base de la práctica (Python 3.12).
+# Mantener sincronizado con environment.yml.
+mediapipe==0.10.21                # detección de pose (muñecas y hombros)
+numpy==1.26.4
+opencv-contrib-python==4.11.0.86  # captura de la cámara (lo exige mediapipe)
+pygame==2.6.1                     # gráficos, interacción y audio
+
