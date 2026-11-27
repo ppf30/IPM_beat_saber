@@ -203,7 +203,7 @@ class Renderer:
             self.text(LETTERS[hand], self.font_l, WHITE, (x, 430), "center", shadow=False)
             label = "mano izquierda" if hand is Hand.LEFT else "mano derecha"
             self.text(label, self.font_s, WHITE, (x, 485), "center")
-        self.text("Golpea cada bloque con la mano de su color, en el momento en que se cierra el aro",
+        self.text("Golpea cada bloque con la mano de su color, en el momento en que se cierra el marco",
                   self.font_s, GREY, (cx, 540), "center")
         self.text("1-3: nivel    ENTER: jugar    C: calibrar    ESC: salir", self.font_m, WHITE, (cx, 620), "center")
         if message:
@@ -254,8 +254,13 @@ class Renderer:
             p = hands.get(hand)
             if p.valid:
                 pos = (int(rect.x + p.x * rect.w), int(rect.y + p.y * rect.h))
-                pygame.draw.circle(self.screen, COLORS[hand], pos, 14)
+
+                icon = pygame.Rect(0, 0, 68, 68)
+                icon.center = (x, 430)
+                pygame.draw.rect(self.screen, COLORS[hand], icon, border_radius=10)
+
                 pygame.draw.circle(self.screen, WHITE, pos, 14, 2)
+                
         self._bar(pygame.Rect(rect.x, rect.bottom + 20, rect.w, 22), progress)
         if phase == "capturing" and n_samples == 0:
             self.text("No se detectan tus manos", self.font_s, (255, 150, 60),
@@ -331,16 +336,19 @@ class Renderer:
         self.text("ENTER: menú    R: repetir", self.font_m, WHITE, (cx, 685), "center")
 
     def _draw_grid(self) -> None:
-        """Dibuja los huecos de la rejilla donde aparecen los bloques
-        """
+        """Dibuja los huecos cuadrados de la rejilla donde aparecen los bloques"""
+
         cfg = self.cfg
+        half = int(cfg.block_radius * 0.55)
         for col in range(cfg.grid_cols):
             for row in range(cfg.grid_rows):
-                c = cfg.cell_center(col, row)
-                pygame.draw.circle(self.screen, (52, 48, 86), c, int(cfg.block_radius * 0.55), 2)
+                slot = pygame.Rect(0, 0, 2 * half, 2 * half)
+                slot.center = cfg.cell_center(col, row)
+                pygame.draw.rect(self.screen, (52, 48, 86), slot, 2, border_radius=6)
 
     def _draw_block(self, note: ChartNote, progress: float) -> None:
-        """Dibuja un bloque con el aro de aproximacion que se cierra sobre el
+        """
+        Dibuja un bloque cuadrado con el marco de aproximacion que se encoge sobre el
 
         Args:
             note (ChartNote): Bloque a dibujar
@@ -350,11 +358,15 @@ class Renderer:
         color = COLORS[note.hand]
         cx, cy = cfg.cell_center(note.col, note.row)
         p = max(progress, 0.0)
-        radius = int(cfg.block_radius * (0.7 + 0.3 * (1 - p)))
-        pygame.draw.circle(self.screen, _lerp_color((20, 20, 30), color, 0.55), (cx, cy), radius)
-        pygame.draw.circle(self.screen, color, (cx, cy), radius, 5)
-        ring = int(cfg.block_radius * (1 + 1.8 * p))
-        pygame.draw.circle(self.screen, WHITE, (cx, cy), ring, 3)
+        half = int(cfg.block_radius * (0.7 + 0.3 * (1 - p)))
+        block = pygame.Rect(0, 0, 2 * half, 2 * half)
+        block.center = (cx, cy)
+        pygame.draw.rect(self.screen, _lerp_color((20, 20, 30), color, 0.55), block, border_radius=10)
+        pygame.draw.rect(self.screen, color, block, 5, border_radius=10)
+        frame_half = int(cfg.block_radius * (1 + 0.8 * p))
+        frame = pygame.Rect(0, 0, 2 * frame_half, 2 * frame_half)
+        frame.center = (cx, cy)
+        pygame.draw.rect(self.screen, WHITE, frame, 3, border_radius=12)
         self.text(LETTERS[note.hand], self.font_l, WHITE, (cx, cy), "center", shadow=False)
 
     def _draw_sabers(self, hands: HandsFrame) -> None:

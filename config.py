@@ -68,14 +68,14 @@ class Config:
     grid_cols: int = 4
     grid_rows: int = 3
     play_area: tuple[float, float, float, float] = (0.15, 0.20, 0.85, 0.80)
-    block_radius: float = 46.0
+    block_radius: float = 50.0
     saber_radius: float = 22.0
-    approach_time: float = 1.2
+    approach_time: float = 1.5
 
-    perfect_window: float = 0.08
-    good_window: float = 0.16
-    ok_window: float = 0.25
-    min_swing_speed: float = 200.0
+    perfect_window: float = 0.10
+    good_window: float = 0.20
+    ok_window: float = 0.30
+    min_swing_speed: float = 150.0
     points_perfect: int = 100
     points_good: int = 70
     points_ok: int = 40
@@ -106,20 +106,19 @@ DEFAULT_CONFIG = Config()
 
 LEVELS: dict[str, dict] = {
     "suave": dict(
-        perfect_window=0.12, good_window=0.22, ok_window=0.35,
-        approach_time=1.8, min_swing_speed=120.0, block_radius=56.0,
+        perfect_window=0.14, good_window=0.24, ok_window=0.38,
+        approach_time=2.0, min_swing_speed=100.0, block_radius=58.0,
     ),
     "normal": {},
     "intenso": dict(
-        perfect_window=0.07, good_window=0.13, ok_window=0.20,
-        approach_time=1.0, min_swing_speed=300.0,
-    ),
-}
+        perfect_window=0.08, good_window=0.15, ok_window=0.24,
+        approach_time=1.2, min_swing_speed=220.0,),}
+
 LEVEL_CHARTS: dict[str, dict] = {
-    "suave": dict(bpm=70.0, bars=12),
-    "normal": dict(bpm=100.0, bars=16),
-    "intenso": dict(bpm=120.0, bars=20),
-}
+    "suave": dict(bpm=60.0, bars=12),
+    "normal": dict(bpm=80.0, bars=16),
+    "intenso": dict(bpm=100.0, bars=20),}
+
 DEFAULT_LEVEL = "normal"
 
 

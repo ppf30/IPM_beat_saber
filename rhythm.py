@@ -40,6 +40,15 @@ def load_chart(path: Path) -> Chart:
 def generate_demo_chart(bpm: float = 100.0, bars: int = 16, seed: int = 7, title: str = "Demo") -> Chart:
     """Genera un chart de demostracion con dificultad progresiva en cuatro tramos
 
+    Reglas para que el juego sea comodo y las manos no se estorben:
+    cada mano trabaja solo en su mitad de la rejilla (izquierda: columnas 0-1, derecha:
+    columnas 2-3), cada nota aparece en una celda contigua a la anterior de esa mano y
+    una misma mano nunca tiene dos bloques con menos de 2 beats de separacion.
+
+    Tramos: 1) un bloque cada 2 beats; 2) un bloque por beat alternando manos;
+    3) igual, y cada dos compases un golpe doble (ambas manos a la vez);
+    4) golpe doble en todos los compases
+
     Args:
         bpm (float): Pulsaciones por minuto del patron
         bars (int): Cantidad de compases a generar
@@ -51,39 +60,55 @@ def generate_demo_chart(bpm: float = 100.0, bars: int = 16, seed: int = 7, title
     """
     rng = random.Random(seed)
     beat = 60.0 / bpm
-    cols = {Hand.LEFT: (0, 1, 2), Hand.RIGHT: (1, 2, 3)}
-    last: dict[Hand, Optional[tuple[int, int]]] = {Hand.LEFT: None, Hand.RIGHT: None}
+    cols = {Hand.LEFT: (0, 1), Hand.RIGHT: (2, 3)}
+    last_cell: dict[Hand, Optional[tuple[int, int]]] = {Hand.LEFT: None, Hand.RIGHT: None}
+    last_pos = {Hand.LEFT: -10.0, Hand.RIGHT: -10.0}
     notes: list[ChartNote] = []
 
-    def add(beat_pos: float, hand: Hand, avoid: Optional[tuple[int, int]] = None) -> tuple[int, int]:
-        """Agrega una nota aleatoria evitando repetir celda o coincidir con otra mano"""
+    def can_play(hand: Hand, pos: float) -> bool:
+        """Indica si la mano lleva al menos 2 beats sin tener un bloque"""
+        return pos - last_pos[hand] >= 2
+
+    def add(pos: float, hand: Hand) -> None:
+        """Agrega una nota en la mitad de la mano, en una celda contigua a su ultima nota"""
+        prev = last_cell[hand]
         options = [
             (c, r) for c in cols[hand] for r in range(3)
-            if (c, r) != last[hand] and (c, r) != avoid
+            if (c, r) != prev and (prev is None or (abs(c - prev[0]) <= 1 and abs(r - prev[1]) <= 1))
         ]
         cell = rng.choice(options)
-        last[hand] = cell
-        notes.append(ChartNote(beat_pos * beat, hand, *cell))
-        return cell
+        last_cell[hand] = cell
+        last_pos[hand] = pos
+        notes.append(ChartNote(pos * beat, hand, *cell))
+
+    def add_single(pos: float) -> None:
+        """Agrega un bloque a la mano que lleva mas tiempo sin tocar (la derecha si empatan)"""
+        hand = min((Hand.RIGHT, Hand.LEFT), key=lambda h: last_pos[h])
+        if can_play(hand, pos):
+            add(pos, hand)
+
+    def add_double(pos: float) -> None:
+        """Agrega un golpe doble, una nota por mano, si ambas llevan 2 beats sin tocar"""
+        if can_play(Hand.LEFT, pos) and can_play(Hand.RIGHT, pos):
+            add(pos, Hand.RIGHT)
+            add(pos, Hand.LEFT)
 
     stage_len = max(bars // 4, 1)
-    hand_order = [Hand.RIGHT, Hand.LEFT]
-    n = 0
     for bar in range(bars):
         stage = min(bar // stage_len, 3)
+        with_double = stage == 3 or (stage == 2 and bar % 2 == 0)
         for b in range(4):
             pos = 4 + bar * 4 + b
-            if stage == 0 and b % 2 == 1:
-                continue
-            if stage == 2 and b == 0:
-                cell = add(pos, Hand.RIGHT)
-                add(pos, Hand.LEFT, avoid=cell)
+            if stage == 0:
+                if b % 2 == 0:
+                    add_single(pos)
+            elif with_double:
+                if b == 0:
+                    add_single(pos)
+                elif b == 2:
+                    add_double(pos)
             else:
-                add(pos, hand_order[n % 2])
-                n += 1
-            if stage == 3 and b in (1, 3):
-                add(pos + 0.5, hand_order[n % 2])
-                n += 1
+                add_single(pos)
     notes.sort(key=lambda x: x.time)
     return Chart(title, bpm, notes)
 
